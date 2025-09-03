@@ -81,6 +81,24 @@
 
 		<!--DATA: UtcTime, ProcessGuid, ProcessID, Image, FileVersion, Description, Product, Company, CommandLine, CurrentDirectory, User, LogonGuid, LogonId, TerminalSessionId, IntegrityLevel, Hashes, ParentProcessGuid, ParentProcessId, ParentImage, ParentCommandLine, RuleName-->
 	<RuleGroup name="" groupRelation="or">
+		<ProcessCreate onmatch="include">
+			<Image name="RegHiveDump" condition="end with">reg.exe</Image> <!--reg.exe can be used to dump the registry hives with the save command-->
+			<CommandLine condition="contains">save</CommandLine>    
+			<CommandLine condition="contains">hklm\sam</CommandLine>
+			<CommandLine condition="contains">hklm\system</CommandLine>
+			<CommandLine condition="contains">hklm\security</CommandLine>
+		</ProcessCreate>
+
+		<ProcessCreate onmatch="include">
+			<OriginalFileName name="RegHiveDump_OriginalName" condition="is">reg.exe</OriginalFileName> <!--Checks for renamed reg.exe, which can be used to dump registry hives with the save command-->
+			<CommandLine condition="contains">save</CommandLine>
+			<CommandLine condition="contains">hklm\sam</CommandLine>
+			<CommandLine condition="contains">hklm\system</CommandLine>
+			<CommandLine condition="contains">hklm\security</CommandLine>
+		</ProcessCreate>
+	</RuleGroup>
+	
+	<RuleGroup name="" groupRelation="or">
 		<ProcessCreate onmatch="exclude">
 			<!--SECTION: Microsoft Windows-->
 			<CommandLine condition="begin with"> "C:\Windows\system32\wermgr.exe" "-queuereporting_svc" </CommandLine> <!--Windows:Windows error reporting/telemetry-->
@@ -131,7 +149,7 @@
 			<CommandLine condition="is">C:\Windows\system32\svchost.exe -k LocalService -p -s BthAvctpSvc</CommandLine>
 			<CommandLine condition="is">C:\Windows\system32\svchost.exe -k localService -s nsi</CommandLine>
 			<CommandLine condition="is">C:\Windows\system32\svchost.exe -k localService -s w32Time</CommandLine>
-      <CommandLine condition="is">C:\Windows\system32\svchost.exe -k localServiceAndNoImpersonation</CommandLine> <!--Windows: Network services-->
+      		<CommandLine condition="is">C:\Windows\system32\svchost.exe -k localServiceAndNoImpersonation</CommandLine> <!--Windows: Network services-->
 			<CommandLine condition="is">C:\Windows\system32\svchost.exe -k localServiceAndNoImpersonation -p</CommandLine> <!--Windows: Network services-->
 			<CommandLine condition="is">C:\Windows\system32\svchost.exe -k localServiceNetworkRestricted -s Dhcp</CommandLine> <!--Windows: Network services-->
 			<CommandLine condition="is">C:\Windows\system32\svchost.exe -k localServiceNetworkRestricted -s EventLog</CommandLine>
@@ -348,6 +366,8 @@
 			<DestinationPort name="Telnet" condition="is">23</DestinationPort> <!--Telnet protocol, monitor admin connections, insecure-->
 			<DestinationPort name="SMTP" condition="is">25</DestinationPort> <!--SMTP mail protocol port, insecure, used by threats-->
 			<DestinationPort name="IMAP" condition="is">143</DestinationPort> <!--IMAP mail protocol port, insecure, used by threats-->
+			<DestinationPort name="SMB" condition="is">445</DestinationPort> <!--SMB over TCP: monitor file-sharing connections-->
+			<DestinationPort name="SMB" condition="is">139</DestinationPort> <!--NetBIOS/SMB legacy support-->
 			<DestinationPort name="RDP" condition="is">3389</DestinationPort> <!--Windows:RDP: Monitor admin connections-->
 			<DestinationPort name="VNC" condition="is">5800</DestinationPort> <!--VNC protocol: Monitor admin connections, often insecure, using hard-coded admin password-->
 			<DestinationPort name="VNC" condition="is">5900</DestinationPort> <!--VNC protocol Monitor admin connections, often insecure, using hard-coded admin password-->
