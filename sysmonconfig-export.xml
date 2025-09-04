@@ -488,12 +488,95 @@
 		<!--COMMENT:	Monitor for processes accessing other process' memory.-->
 
 		<!--DATA: UtcTime, SourceProcessGuid, SourceProcessId, SourceThreadId, SourceImage, TargetProcessGuid, TargetProcessId, TargetImage, GrantedAccess, CallTrace-->
+	
+	<!-- LSASS dump logging -->
 	<RuleGroup name="" groupRelation="or">
 		<ProcessAccess onmatch="include">
-			<!--NOTE: Using "include" with no rules means nothing in this section will be logged-->
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x0010</GrantedAccess> <!-- PROCESS_VM_READ - reads process memory -->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x0008</GrantedAccess> <!-- PROCESS_VM_OPERATION - required to perform operation on a process's memory -->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x0020</GrantedAccess> <!-- PROCESS_VM_WRITE - writes process memory-->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x0040</GrantedAccess> <!-- PROCESS_DUP_HANDLE - duplicates a handle to the process -->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x0002</GrantedAccess> <!-- PROCESS_CREATE_THREAD - creates a thread in the process -->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x1010</GrantedAccess> <!-- PROCESS_QUERY_LIMITED_INFORMATION - used by Mimikatz, rundll32.exe, xordump.exe-->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x1fffff</GrantedAccess> <!-- PROCESS_ALL_ACCESS - used by Mimikatz, procdump.exe, xordump.exe-->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x1410</GrantedAccess> <!-- PROCESS_QUERY_INFORMATION + PROCESS_QUERY_LIMITED_INFORMATION - used by rundll32.exe, createdump.exe -->
+			</Rule>
+			<Rule groupRelation="and">
+				<TargetImage name="technique_id=T1003,technique_name=Credential Dumping" condition="end with">lsass.exe</TargetImage> 
+				<GrantedAccess condition="contains">0x1438</GrantedAccess> <!-- PROCESS_QUERY_INFORMATION + PROCESS_QUERY_LIMITED_INFORMATION + PROCESS_VM_READ + PROCESS_VM_WRITE + PROCESS_VM_OPERATION - used by Mimikatz -->
+			</Rule>
 		</ProcessAccess>
 	</RuleGroup>
-
+	
+	<RuleGroup name="" groupRelation="or">
+		<ProcessAccess onmatch="exclude">
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">wmiprvse.exe</SourceImage>
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">GoogleUpdate.exe</SourceImage>
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">LTSVC.exe</SourceImage>
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">taskmgr.exe</SourceImage>
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+				<GrantedAccess condition="excludes">0x1fffff</GrantedAccess> <!-- Dumping LSASS through Task Manager invokes PROCESS_ALL_ACCESS, this prevents that from not being logged -->
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">VBoxService.exe</SourceImage>	<!-- Virtual Box -->
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">vmtoolsd.exe</SourceImage> <!-- VMWare -->
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">\Citrix\System32\wfshell.exe</SourceImage> <!--Citrix process in C:\Program Files (x86)\Citrix\System32\wfshell.exe -->
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="is">C:\Windows\System32\lsm.exe</SourceImage> <!-- System process under C:\Windows\System32\lsm.exe -->
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">Microsoft.Identity.AadConnect.Health.AadSync.Host.exe</SourceImage> <!-- Microsoft Azure AD Connect Health Sync Agent -->
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+			<Rule groupRelation="and">
+				<SourceImage condition="begin with">C:\Program Files (x86)\Symantec\Symantec Endpoint Protection</SourceImage> <!-- Symantec -->
+				<TargetImage condition="end with">lsass.exe</TargetImage>
+			</Rule>
+		</ProcessAccess>
+	</RuleGroup>
+	
 	<!--SYSMON EVENT ID 11 : FILE CREATED [FileCreate]-->
 		<!--EVENT 11: "File created"-->
 		<!--NOTE:	Other filesystem "minifilters" can make it appear to Sysmon that some files are being written twice. This is not a Sysmon issue, per Mark Russinovich.-->
@@ -502,6 +585,7 @@
 		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image, TargetFilename, CreationUtcTime-->
 	<RuleGroup name="" groupRelation="or">
 		<FileCreate onmatch="include">
+			<TargetFilename condition="contains">mimikatz</TargetFilename> <!--Very basic Mimikatz detection-->
 			<TargetFilename name="T1023" condition="contains">\Start Menu</TargetFilename> <!--Windows: Startup links and shortcut modification [ https://attack.mitre.org/wiki/Technique/T1023 ] -->
 			<TargetFilename name="T1165" condition="contains">\Startup\</TargetFilename> <!--Microsoft:Changes to user's auto-launched files and shortcuts-->
 			<TargetFilename name="OutlookAttachment" condition="contains">\Content.Outlook\</TargetFilename> <!--Microsoft:Outlook: attachments-->
